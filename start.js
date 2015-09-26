@@ -73,8 +73,8 @@ var findLiveGames = function(result) {
       });
     }
 
-    console.log("LIVE games:");
-    console.log(liveGameIDs);
+    //console.log("LIVE games:");
+    //console.log(liveGameIDs);
 
   });
 
