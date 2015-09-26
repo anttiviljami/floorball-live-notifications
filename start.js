@@ -154,10 +154,11 @@ var updateGames = function(game, callback) {
 var start = function() {
   console.log('Starting the Floorball Live Tracker...');
 
-  /*pushover.send({
-    message: 'Starting the Floorball Live Tracker...',   // required
+  pushover.send({
+    title: 'Info',
+    message: 'The Floorball.fi Live Tracker has just been restarted',
     sound: 'bike',
-  });*/
+  });
 
   // main loop
   setInterval(mainLoop, process.env['FLOORBALL_INTERVAL']);
