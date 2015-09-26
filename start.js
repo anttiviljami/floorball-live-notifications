@@ -2,41 +2,100 @@
  * The entry point for this project. Starts the tracker daemon.
  */
 
+require('dotenv').load();
+
 // dependencies
 var _ = require('lodash');
 var async = require('async');
-var config = require('app-config');
 var floorball = require('./lib/floorball-api');
 
+var Pushover = require( 'pushover-notifications' );
+var pushover = new Pushover( {
+  user: process.env['PUSHOVER_USER'],
+  token: process.env['PUSHOVER_TOKEN'],
+});
+
+var liveGameIDs = []; // last updated
 var gameTimes = {}; // last updated
 var gameEvents = {}; // last updated
 
 var mainLoop = function() {
   // get games currently in progress
-  floorball.get('/games/upcoming/' + config.main.statGroupId).on('complete', findLiveGames);
-
+  floorball.get('/games/upcoming/' + process.env['FLOORBALL_GROUP_ID']).on('complete', findLiveGames);
 };
 
 var findLiveGames = function(result) {
   // filter games in progress from all upcoming games
-  var liveGames = _.filter(result.games, function(game) { return game.inProgress; });
+
+  var liveGames = _.filter(result.games, function(game) { return true === game.inProgress; });
+
+  var prevLiveGameIDs = liveGameIDs;
+  liveGameIDs = _.map(liveGames, function(game) { return game.game; });
 
   async.each(liveGames, updateGames, function() {
-    console.log(gameTimes);
-    console.log(gameEvents);
+
+    // after all live games have been updated
+
+    var newLiveGames = _.filter(liveGames, function(game) { return !_.contains(prevLiveGameIDs, game.game) });
+    if(newLiveGames.length) {
+      _.each(newLiveGames, function(game) {
+        var gameName = game.homeTeamAbbrv + ' - ' + game.awayTeamAbbrv;
+        var message = 'Peli alkoi!';
+        var gameLink = 'http://floorball.fi/tulokset/#/ottelu/live/' + game.game + '/' + process.env['FLOORBALL_GROUP_ID'];
+        console.log(message);
+        pushover.send({
+          title: gameName,
+          message: message,
+          sound: 'bike',
+          url: gameLink,
+        });
+      });
+    }
+
+    var endedGames = _.filter(prevLiveGameIDs, function(gameID) { return !_.contains(liveGameIDs, gameID) });
+    if(endedGames.length) {
+      _.each(endedGames, function(gameID) {
+        var gameURI = '/game/' + gameID + '/' + process.env['FLOORBALL_GROUP_ID'];
+        floorball.get(gameURI).on('complete', function(game) {
+          var gameID = game.meta.gameID;
+          var gameName = game.meta.homeTeam + ' - ' + game.meta.awayTeam;
+          var score = game.meta.homeGoalTotal + '-' + game.meta.awayGoalTotal;
+          var message = 'Peli päättyi tilanteeseen ' + score;
+          var gameLink = 'http://floorball.fi/tulokset/#/ottelu/live/' + gameID + '/' + process.env['FLOORBALL_GROUP_ID'];
+          console.log(message);
+          pushover.send({
+            title: gameName,
+            message: message,
+            sound: 'bike',
+            url: gameLink,
+          });
+        });
+      });
+    }
+
+    console.log("LIVE games:");
+    console.log(liveGameIDs);
+
   });
+
 };
 
 var updateGames = function(game, callback) {
-  var gameURI = '/game/' + game.game + '/' + config.main.statGroupId;
+  var gameURI = '/game/' + game.game + '/' + process.env['FLOORBALL_GROUP_ID'];
   floorball.get(gameURI).on('complete', function(game) {
 
     var gameID = game.meta.gameID;
     var gameName = game.meta.homeTeam + ' - ' + game.meta.awayTeam;
     var prevGameTime = gameTimes[gameID] || 0;
     var prevGameEvents = gameEvents[gameID] || {};
+    var gameLink = 'http://floorball.fi/tulokset/#/ottelu/live/' + gameID + '/' + process.env['FLOORBALL_GROUP_ID'];
 
-    var newEvents = _.filter(game.events, function(event) { return !_.contains(prevGameEvents, event.eventID) });
+    // generate a new unique ID for each event based on the event time and id
+    _.each(game.events, function(event) {
+      event.uniqueID = event.gameTime + '-' + event.eventID;
+    });
+
+    var newEvents = _.filter(game.events, function(event) { return !_.contains(prevGameEvents, event.uniqueID) });
 
     _.forEachRight(newEvents, function(event) {
       //console.log('Event #' + event.eventID);
@@ -44,28 +103,48 @@ var updateGames = function(game, callback) {
 
         case 'goal':
           var team = event.teamAbbrv;
-          var scorer = event.scorerFirstName + ' ' + event.scorerLastName;
+          var scorer = event.scorerLastName != 'OMA MAALI' ? event.scorerFirstName + ' ' + event.scorerLastName : 'OMA MAALI';
           var score = event.homeGoals + '-' + event.awayGoals;
-          console.log(gameName + ': ' + score + '! Score for ' + team + ' by ' + scorer);
-          break;
+          var message = score + '! Maalintekijä: ' + scorer;
 
-        case 'penalty':
-          // we don't care about penalties
+          console.log(message);
+          pushover.send({
+            title: gameName,
+            message: message,
+            sound: 'bike',
+            url: gameLink,
+          });
+
+          return false;
+
           break;
 
         case 'periodBreak':
-          console.log(gameName + ': ' + 'End of period #' + event.period);
+          var score = game.meta.homeGoalTotal + '-' + game.meta.awayGoalTotal;
+          /*if(game.meta.homeGoalTotal != game.meta.awayGoalTotal) {
+            score += ' for ';
+            score += game.meta.homeGoalTotal > game.meta.awayGoalTotal ? game.meta.homeTeam : game.meta.awayTeam;
+          }*/
+          var message = 'Erä ' + event.period + 'päättyi. Lopputulos: ' + score;
+          console.log(message);
+          pushover.send({
+            title: gameName,
+            message: message,
+            sound: 'bike',
+            url: gameLink,
+          });
+
           break;
 
         default:
-          console.log('New event: ' + event.type);
+          console.log(gameName + ': ' + 'Unknown event: ' + event.type);
           break;
       }
     });
 
     var currGameTime = game.meta.gameEffTime;
     gameTimes[gameID] = currGameTime;
-    gameEvents[gameID] = _.map(game.events, function(event) { return event.eventID; } );
+    gameEvents[gameID] = _.map(game.events, function(event) { return event.uniqueID; });
 
     callback();
   });
@@ -75,8 +154,13 @@ var updateGames = function(game, callback) {
 var start = function() {
   console.log('Starting the Floorball Live Tracker...');
 
+  /*pushover.send({
+    message: 'Starting the Floorball Live Tracker...',   // required
+    sound: 'bike',
+  });*/
+
   // main loop
-  setInterval(mainLoop, config.main.interval);
+  setInterval(mainLoop, process.env['FLOORBALL_INTERVAL']);
   mainLoop();
 
 };

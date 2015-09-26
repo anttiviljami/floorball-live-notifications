@@ -26,7 +26,9 @@
   "dependencies": {
     "app-config": "^0.1.4",
     "async": "^1.4.2",
+    "dotenv": "^1.2.0",
     "lodash": "^3.10.1",
+    "pushover-notifications": "^0.2.2",
     "request": "^2.64.0",
     "restler": "^3.3.0"
   }
