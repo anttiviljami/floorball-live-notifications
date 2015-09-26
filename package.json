@@ -1,0 +1,26 @@
+{
+  "name": "floorball-live-notifications",
+  "version": "1.0.0",
+  "description": "A live result tracker bot that polls the floorball.fi REST API",
+  "main": "start.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anttiviljami/floorball-live-notifications"
+  },
+  "keywords": [
+    "floorball",
+    "notifications",
+    "results",
+    "result",
+    "tracker"
+  ],
+  "author": "Antti Kuosmanen <antti@seravo.fi>",
+  "license": "GPLv3",
+  "bugs": {
+    "url": "https://github.com/anttiviljami/floorball-live-notifications/issues"
+  },
+  "homepage": "https://github.com/anttiviljami/floorball-live-notifications"
+}
