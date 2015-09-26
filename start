@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Start up the tracker Daemon
+node start.js
