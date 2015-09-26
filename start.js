@@ -114,9 +114,6 @@ var updateGames = function(game, callback) {
             sound: 'bike',
             url: gameLink,
           });
-
-          return false;
-
           break;
 
         case 'periodBreak':
@@ -152,11 +149,12 @@ var updateGames = function(game, callback) {
 
 // entry point
 var start = function() {
-  console.log('Starting the Floorball Live Tracker...');
 
+  var message =  'Floorball.fi LIVE tracker botti on juuri käynnistetty.';
+  console.log(message);
   pushover.send({
     title: 'Info',
-    message: 'The Floorball.fi Live Tracker has just been restarted',
+    message: message,
     sound: 'bike',
   });
 
