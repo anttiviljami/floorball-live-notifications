@@ -25,6 +25,9 @@
   "homepage": "https://github.com/anttiviljami/floorball-live-notifications",
   "dependencies": {
     "app-config": "^0.1.4",
-    "lodash": "^3.10.1"
+    "async": "^1.4.2",
+    "lodash": "^3.10.1",
+    "request": "^2.64.0",
+    "restler": "^3.3.0"
   }
 }
