@@ -15,7 +15,7 @@ var pushover = new Pushover( {
   token: process.env['PUSHOVER_TOKEN'],
 });
 
-var liveGameIDs = []; // last updated
+var liveGameIDs; // last updated
 var gameTimes = {}; // last updated
 var gameEvents = {}; // last updated
 
@@ -29,7 +29,7 @@ var findLiveGames = function(result) {
 
   var liveGames = _.filter(result.games, function(game) { return true === game.inProgress; });
 
-  var prevLiveGameIDs = liveGameIDs;
+  var prevLiveGameIDs = liveGameIDs || -1;
   liveGameIDs = _.map(liveGames, function(game) { return game.game; });
 
   async.each(liveGames, updateGames, function() {
@@ -37,7 +37,7 @@ var findLiveGames = function(result) {
     // after all live games have been updated
 
     var newLiveGames = _.filter(liveGames, function(game) { return !_.contains(prevLiveGameIDs, game.game) });
-    if(newLiveGames.length) {
+    if(newLiveGames.length && prevLiveGameIDs !== -1) {
       _.each(newLiveGames, function(game) {
         var gameName = game.homeTeamAbbrv + ' - ' + game.awayTeamAbbrv;
         var message = 'Peli alkoi!';
@@ -81,13 +81,14 @@ var findLiveGames = function(result) {
 };
 
 var updateGames = function(game, callback) {
+
   var gameURI = '/game/' + game.game + '/' + process.env['FLOORBALL_GROUP_ID'];
   floorball.get(gameURI).on('complete', function(game) {
 
     var gameID = game.meta.gameID;
     var gameName = game.meta.homeTeam + ' - ' + game.meta.awayTeam;
     var prevGameTime = gameTimes[gameID] || 0;
-    var prevGameEvents = gameEvents[gameID] || {};
+    var prevGameEvents = gameEvents[gameID] || -1;
     var gameLink = 'http://floorball.fi/tulokset/#/ottelu/live/' + gameID + '/' + process.env['FLOORBALL_GROUP_ID'];
 
     // generate a new unique ID for each event based on the event time and id
@@ -98,6 +99,9 @@ var updateGames = function(game, callback) {
     var newEvents = _.filter(game.events, function(event) { return !_.contains(prevGameEvents, event.uniqueID) });
 
     _.forEachRight(newEvents, function(event) {
+
+      if(prevGameEvents === -1) return false;
+
       //console.log('Event #' + event.eventID);
       switch(event.appEventType) {
 
