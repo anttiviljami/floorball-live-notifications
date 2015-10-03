@@ -31,5 +31,10 @@
     "pushover-notifications": "^0.2.2",
     "request": "^2.64.0",
     "restler": "^3.3.0"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-jshint": "^1.11.2",
+    "jshint-stylish": "^2.0.1"
   }
 }

@@ -21,6 +21,16 @@ To run, simply
 ./start
 ```
 
+## Development
+
+Code style requirements for this project are included in the `.jshintrc` file.
+
+To run jshint automatically:
+
+```
+gulp lint
+```
+
 ## TODO
 
 - simpler setup (maybe interactive config creation ?)
