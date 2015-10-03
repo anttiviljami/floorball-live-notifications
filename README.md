@@ -22,8 +22,6 @@ To run, simply
 ## TODO
 
 - Add notifications for period starts
-- Add notifications for penalties
-- Add notifications for team timeouts
 - What happens if there's overtime ?
 - Game end and end of 3rd period shouldn't both reported ?
 

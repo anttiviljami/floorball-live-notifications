@@ -150,6 +150,31 @@ var updateGames = function(game, callback) {
 
           break;
 
+        case 'penalty':
+          var sufferer = event.suffererFirstName + ' ' + event.suffererLastName;
+          var message = event.penaltyMinutes + ' min ' + event.teamAbbrv + ', ' + sufferer + ', ' + event.penaltyFaultName;
+          // 2 min Sheriffs, ANU NUMMELIN, TYÖNTÄMINEN
+          console.log(message);
+          pushover.send({
+            title: gameName,
+            message: message,
+            sound: 'bike',
+            url: gameLink,
+          });
+          break;
+
+        case 'timeout':
+          // Aikalisä, ÅIF
+          var message = "Aikalisä, " + event.teamAbbrv;
+          console.log(message);
+          pushover.send({
+            title: gameName,
+            message: message,
+            sound: 'bike',
+            url: gameLink,
+          });
+          break;
+
         default:
           console.log(gameName + ': ' + 'Unknown event: ' + event.type);
           break;
