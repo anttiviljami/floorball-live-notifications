@@ -26,9 +26,7 @@ var mainLoop = function() {
 
 var findLiveGames = function(result) {
   // filter games in progress from all upcoming games
-  
   var myTeams = _.map(process.env['FLOORBALL_MY_TEAMS'].split(','), function(a) { return parseInt(a,10); });
-  console.log(myTeams);
 
   var liveGames = _.filter(result.games, function(game) { 
     // does the game feature my teams ?
@@ -44,7 +42,6 @@ var findLiveGames = function(result) {
   var prevLiveGameIDs = liveGameIDs || -1;
   liveGameIDs = _.map(liveGames, function(game) { return game.game; });
 
-
   async.each(liveGames, updateGames, function() {
 
     // after all live games have been updated
@@ -55,7 +52,7 @@ var findLiveGames = function(result) {
         var gameName = game.homeTeamAbbrv + ' - ' + game.awayTeamAbbrv;
         var message = 'Peli alkoi!';
         var gameLink = 'http://floorball.fi/tulokset/#/ottelu/live/' + game.game + '/' + process.env['FLOORBALL_GROUP_ID'];
-        console.log(message);
+        console.log(gameName + ': ' + message);
         pushover.send({
           title: gameName,
           message: message,
@@ -66,8 +63,9 @@ var findLiveGames = function(result) {
     }
 
     var endedGames = _.filter(prevLiveGameIDs, function(gameID) { return !_.contains(liveGameIDs, gameID) });
-    if(endedGames.length) {
+    if(endedGames.length) { 
       _.each(endedGames, function(gameID) {
+        return false; // disabled game endings for now, since period breaks are already reported on
         var gameURI = '/game/' + gameID + '/' + process.env['FLOORBALL_GROUP_ID'];
         floorball.get(gameURI).on('complete', function(game) {
           var gameID = game.meta.gameID;
@@ -75,7 +73,7 @@ var findLiveGames = function(result) {
           var score = game.meta.homeGoalTotal + '-' + game.meta.awayGoalTotal;
           var message = 'Peli päättyi tilanteeseen ' + score;
           var gameLink = 'http://floorball.fi/tulokset/#/ottelu/live/' + gameID + '/' + process.env['FLOORBALL_GROUP_ID'];
-          console.log(message);
+          console.log(gameName + ': ' + message);
           pushover.send({
             title: gameName,
             message: message,
@@ -124,7 +122,7 @@ var updateGames = function(game, callback) {
           var score = event.homeGoals + '-' + event.awayGoals;
           var message = score + '! Maalintekijä: ' + scorer;
 
-          console.log(message);
+          console.log(gameName + ': ' + message);
           pushover.send({
             title: gameName,
             message: message,
@@ -139,8 +137,8 @@ var updateGames = function(game, callback) {
             score += ' for ';
             score += game.meta.homeGoalTotal > game.meta.awayGoalTotal ? game.meta.homeTeam : game.meta.awayTeam;
           }*/
-          var message = 'Erä ' + event.period + 'päättyi. Lopputulos: ' + score;
-          console.log(message);
+          var message = event.period + '. erä päättyi. Lopputulos: ' + score;
+          console.log(gameName + ': ' + message);
           pushover.send({
             title: gameName,
             message: message,
@@ -154,7 +152,7 @@ var updateGames = function(game, callback) {
           var sufferer = event.suffererFirstName + ' ' + event.suffererLastName;
           var message = event.penaltyMinutes + ' min ' + event.teamAbbrv + ', ' + sufferer + ', ' + event.penaltyFaultName;
           // 2 min Sheriffs, ANU NUMMELIN, TYÖNTÄMINEN
-          console.log(message);
+          console.log(gameName + ': ' + message);
           pushover.send({
             title: gameName,
             message: message,
@@ -166,7 +164,7 @@ var updateGames = function(game, callback) {
         case 'timeout':
           // Aikalisä, ÅIF
           var message = "Aikalisä, " + event.teamAbbrv;
-          console.log(message);
+          console.log(gameName + ': ' + message);
           pushover.send({
             title: gameName,
             message: message,
