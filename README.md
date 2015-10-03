@@ -1,5 +1,4 @@
-![Floorball.fi Live Notifications](https://raw.githubusercontent.com/suvisannisofia/floorball-live-notifications/master/assets/images/cover.jpg)
-
+![Floorball.fi Live Notifications](/assets/images/cover.jpg)
 # Floorball.fi Live Notifications
 
 A live result tracker bot that polls the floorball.fi REST API and can be configured to send notifications via Pushover (or other services) for events.
@@ -25,6 +24,10 @@ Or run in a production environment (with forever):
 ```
 forever start start.js
 ```
+
+## Screenshot
+
+![iPhone screenshot](/assets/images/screenshot1.png)
 
 ## Development
 
