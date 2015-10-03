@@ -21,6 +21,11 @@ To run, simply
 ./start
 ```
 
+Or run in a production environment (with forever):
+```
+forever start start.js
+```
+
 ## Development
 
 Code style requirements for this project are included in the `.jshintrc` file.
