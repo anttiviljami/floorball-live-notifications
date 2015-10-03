@@ -16,18 +16,22 @@ var pushover = new Pushover({
   token: process.env.PUSHOVER_TOKEN,
 });
 
-var liveGameIDs; // last updated
+var liveGameIDs = {}; // last updated
 var gameTimes = {}; // last updated
 var gameEvents = {}; // last updated
 
 var mainLoop = function() {
   // get games currently in progress
-  floorball.get('/games/upcoming/' + process.env.FLOORBALL_GROUP_ID).on('complete', findLiveGames);
+  var myGroups =  _.map(process.env.FLOORBALL_MY_GROUPS.split(','), function(a) { return parseInt(a,10); });
+  _.each(myGroups, function(groupID) {
+    floorball.get('/games/upcoming/' + groupID).on('complete', findLiveGames);
+  });
 };
 
 var findLiveGames = function(result) {
   // filter games in progress from all upcoming games
   var myTeams = _.map(process.env.FLOORBALL_MY_TEAMS.split(','), function(a) { return parseInt(a,10); });
+  var subSerie = result.games[0].subSerie;
 
   var liveGames = _.filter(result.games, function(game) { 
     // does the game feature my teams ?
@@ -40,8 +44,8 @@ var findLiveGames = function(result) {
     return false;
   });
 
-  var prevLiveGameIDs = liveGameIDs || -1;
-  liveGameIDs = _.map(liveGames, function(game) { return game.game; });
+  var prevLiveGameIDs = liveGameIDs[subSerie] || -1;
+  liveGameIDs[subSerie] = _.map(liveGames, function(game) { return game.game; });
 
   async.each(liveGames, updateGames, function() {
 
@@ -52,7 +56,7 @@ var findLiveGames = function(result) {
       _.each(newLiveGames, function(game) {
         var gameName = game.homeTeamAbbrv + ' - ' + game.awayTeamAbbrv;
         var message = 'Peli alkoi!';
-        var gameLink = 'http://floorball.fi/tulokset/#/ottelu/live/' + game.game + '/' + process.env.FLOORBALL_GROUP_ID;
+        var gameLink = 'http://floorball.fi/tulokset/#/ottelu/live/' + game.game + '/' + game.subSerie;
         console.log(gameName + ': ' + message);
         pushover.send({
           title: gameName,
@@ -67,13 +71,13 @@ var findLiveGames = function(result) {
     var endedGames = _.filter(prevLiveGameIDs, function(gameID) { return !_.contains(liveGameIDs, gameID) });
     if(endedGames.length) { 
       _.each(endedGames, function(gameID) {
-        var gameURI = '/game/' + gameID + '/' + process.env['FLOORBALL_GROUP_ID'];
+        var gameURI = '/game/' + gameID + '/' + game.subSerie;
         floorball.get(gameURI).on('complete', function(game) {
           var gameID = game.meta.gameID;
           var gameName = game.meta.homeTeam + ' - ' + game.meta.awayTeam;
           var score = game.meta.homeGoalTotal + '-' + game.meta.awayGoalTotal;
           var message = 'Peli päättyi tilanteeseen ' + score;
-          var gameLink = 'http://floorball.fi/tulokset/#/ottelu/live/' + gameID + '/' + process.env['FLOORBALL_GROUP_ID'];
+          var gameLink = 'http://floorball.fi/tulokset/#/ottelu/live/' + gameID + '/' + game.subSerie;
           console.log(gameName + ': ' + message);
           pushover.send({
             title: gameName,
@@ -95,7 +99,7 @@ var findLiveGames = function(result) {
 
 var updateGames = function(game, callback) {
 
-  var gameURI = '/game/' + game.game + '/' + process.env.FLOORBALL_GROUP_ID;
+  var gameURI = '/game/' + game.game + '/' + game.subSerie;
   floorball.get(gameURI).on('complete', function(game) {
 
     var gameID = game.meta.gameID;
@@ -103,7 +107,7 @@ var updateGames = function(game, callback) {
     var currGameTime = game.meta.gameEffTime;
     var prevGameTime = gameTimes[gameID] || -1;
     var prevGameEvents = gameEvents[gameID] || -1;
-    var gameLink = 'http://floorball.fi/tulokset/#/ottelu/live/' + gameID + '/' + process.env.FLOORBALL_GROUP_ID;
+    var gameLink = 'http://floorball.fi/tulokset/#/ottelu/live/' + gameID + '/' + game.subSerie;
 
     // detect period starts by checking when the gameTime rolls over period breaks
     _.each(game.meta.periods, function (period) {
