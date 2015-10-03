@@ -21,5 +21,4 @@ To run, simply
 
 ## TODO
 
-- Add notifications for period starts
-
+- simpler setup (maybe interactive config creation ?)

@@ -85,7 +85,7 @@ var findLiveGames = function(result) {
     }
 
     //console.log("LIVE games:");
-    //console.log(liveGameIDs);
+    console.log(liveGameIDs);
 
   });
 
@@ -98,12 +98,29 @@ var updateGames = function(game, callback) {
 
     var gameID = game.meta.gameID;
     var gameName = game.meta.homeTeam + ' - ' + game.meta.awayTeam;
+    var currGameTime = game.meta.gameEffTime;
     var prevGameTime = gameTimes[gameID] || 0;
     var prevGameEvents = gameEvents[gameID] || -1;
     var gameLink = 'http://floorball.fi/tulokset/#/ottelu/live/' + gameID + '/' + process.env['FLOORBALL_GROUP_ID'];
 
+    // detect period starts by checking when the gameTime rolls over period breaks
+    _.each(game.meta.periods, function (period) {
+      if(currGameTime > period.startTime && prevGameTime <= period.startTime) {
+        // period has just started !
+        var message = period.periodNumber + '. erä alkoi!';
+
+        console.log(gameName + ': ' + message);
+        pushover.send({
+          title: gameName,
+          message: message,
+          sound: 'bike',
+          url: gameLink,
+        });
+      }
+    });
+
     // generate a new unique ID for each event based on the event time and id
-    _.each(game.events, function(event) {
+    _.each(game.events, function (event) {
       event.uniqueID = event.gameTime + '-' + event.eventID;
     });
 
@@ -179,7 +196,6 @@ var updateGames = function(game, callback) {
       }
     });
 
-    var currGameTime = game.meta.gameEffTime;
     gameTimes[gameID] = currGameTime;
     gameEvents[gameID] = _.map(game.events, function(event) { return event.uniqueID; });
 
