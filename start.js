@@ -99,13 +99,13 @@ var updateGames = function(game, callback) {
     var gameID = game.meta.gameID;
     var gameName = game.meta.homeTeam + ' - ' + game.meta.awayTeam;
     var currGameTime = game.meta.gameEffTime;
-    var prevGameTime = gameTimes[gameID] || 0;
+    var prevGameTime = gameTimes[gameID] || -1;
     var prevGameEvents = gameEvents[gameID] || -1;
     var gameLink = 'http://floorball.fi/tulokset/#/ottelu/live/' + gameID + '/' + process.env['FLOORBALL_GROUP_ID'];
 
     // detect period starts by checking when the gameTime rolls over period breaks
     _.each(game.meta.periods, function (period) {
-      if(currGameTime > period.startTime && prevGameTime <= period.startTime) {
+      if(prevGameTime != -1 && currGameTime > period.startTime && prevGameTime <= period.startTime) {
         // period has just started !
         var message = period.periodNumber + '. erä alkoi!';
 
@@ -138,6 +138,11 @@ var updateGames = function(game, callback) {
           var scorer = event.scorerLastName != 'OMA MAALI' ? event.scorerFirstName + ' ' + event.scorerLastName : 'OMA MAALI';
           var score = event.homeGoals + '-' + event.awayGoals;
           var message = score + '! Maalintekijä: ' + scorer;
+
+          // assisting
+          if(event.ass1ID) {
+            message += ', syöttäjä: ' + event.ass1FirstName + ' ' + event.ass1LastName;
+          }
 
           console.log(gameName + ': ' + message);
           pushover.send({
