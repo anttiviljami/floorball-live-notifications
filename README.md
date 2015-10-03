@@ -12,6 +12,8 @@ cd floorball-live-notifications
 npm install
 ```
 
+Copy and edit the .env.example file to .env in the project directory
+
 To run, simply
 ```
 ./start
@@ -19,7 +21,6 @@ To run, simply
 
 ## TODO
 
-- Choose single teams' games to follow
 - Add notifications for period starts
 - Add notifications for penalties
 - Add notifications for team timeouts

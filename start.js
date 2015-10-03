@@ -26,11 +26,24 @@ var mainLoop = function() {
 
 var findLiveGames = function(result) {
   // filter games in progress from all upcoming games
+  
+  var myTeams = _.map(process.env['FLOORBALL_MY_TEAMS'].split(','), function(a) { return parseInt(a,10); });
+  console.log(myTeams);
 
-  var liveGames = _.filter(result.games, function(game) { return true === game.inProgress; });
+  var liveGames = _.filter(result.games, function(game) { 
+    // does the game feature my teams ?
+    if(_.includes(myTeams, game.awayTeam) || _.includes(myTeams, game.homeTeam)) {
+      // is the game in progress ?
+      if(game.inProgress) {
+        return true;
+      }
+    }
+    return false;
+  });
 
   var prevLiveGameIDs = liveGameIDs || -1;
   liveGameIDs = _.map(liveGames, function(game) { return game.game; });
+
 
   async.each(liveGames, updateGames, function() {
 
