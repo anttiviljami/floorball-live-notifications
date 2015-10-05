@@ -29,6 +29,11 @@ var mainLoop = function() {
 };
 
 var findLiveGames = function(result) {
+
+  // do nothing if no games were returned
+  if(typeof result.games !== 'object')
+    return false;
+ 
   // filter games in progress from all upcoming games
   var myTeams = _.map(process.env.FLOORBALL_MY_TEAMS.split(','), function(a) { return parseInt(a,10); });
   var subSerie = result.games[0].subSerie;
